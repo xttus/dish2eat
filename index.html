@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>今天吃什么</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>今天吃什么</h1>
+            <div class="last-result" id="lastResult"></div>
+        </header>
+
+        <main>
+            <div class="controls">
+                <div class="meal-type-selector">
+                    <label for="mealType">餐饮种类：</label>
+                    <select id="mealType">
+                        <option value="breakfast">早餐</option>
+                        <option value="lunch" selected>午餐</option>
+                        <option value="dinner">晚餐</option>
+                        <option value="snack">小吃</option>
+                        <option value="drink">饮品</option>
+                        <option value="nightFood">夜宵</option>
+                    </select>
+                </div>
+
+                <div class="cuisine-selector">
+                    <label for="cuisine">菜系：</label>
+                    <select id="cuisine">
+                        <option value="mixed">混合</option>
+                        <option value="sichuan">川菜</option>
+                        <option value="cantonese">粤菜</option>
+                        <option value="hunan">湘菜</option>
+                        <option value="western">西餐</option>
+                        <option value="japanese">日料</option>
+                        <option value="korean">韩餐</option>
+                        <option value="custom">自定义</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="wheel-container">
+                <canvas id="wheelCanvas" width="400" height="400"></canvas>
+                <div class="wheel-pointer"></div>
+            </div>
+
+            <div class="action-buttons">
+                <button id="spinBtn" class="spin-btn">开始抽选</button>
+                <button id="resetBtn" class="reset-btn">重新来</button>
+                <button id="customBtn" class="custom-btn">自定义菜品</button>
+            </div>
+
+            <div class="result-display" id="resultDisplay" style="display: none;">
+                <h2>今天吃：<span id="resultDish"></span></h2>
+                <div class="result-actions">
+                    <button id="favoriteBtn" class="favorite-btn">❤️ 收藏</button>
+                    <button id="shareBtn" class="share-btn">🔗 分享</button>
+                    <button id="againBtn" class="again-btn">再来一次</button>
+                </div>
+            </div>
+        </main>
+
+        <div class="sidebar">
+            <div class="favorites-section">
+                <h3>收藏夹</h3>
+                <div id="favoritesList" class="favorites-list"></div>
+            </div>
+
+            <div class="history-section">
+                <h3>历史记录</h3>
+                <div id="historyList" class="history-list"></div>
+            </div>
+        </div>
+
+        <!-- 自定义菜品弹窗 -->
+        <div id="customModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <span class="close" id="closeModal">&times;</span>
+                <h2>自定义菜品</h2>
+                <div class="custom-input">
+                    <textarea id="customDishes" placeholder="请输入菜品名称，用逗号或换行分隔&#10;例如：红烧肉,宫保鸡丁,麻婆豆腐"></textarea>
+                    <button id="saveDishes" class="save-btn">保存菜品</button>
+                </div>
+                <div class="custom-list">
+                    <h3>当前自定义菜品</h3>
+                    <div id="customDishesList"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 分享弹窗 -->
+        <div id="shareModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <span class="close" id="closeShareModal">&times;</span>
+                <h2>分享结果</h2>
+                <div class="share-content">
+                    <input type="text" id="shareUrl" readonly>
+                    <button id="copyUrl" class="copy-btn">复制链接</button>
+                    <div class="qr-code" id="qrCode"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

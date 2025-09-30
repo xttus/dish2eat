@@ -1,0 +1,530 @@
+/* 重置和基础样式 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    height: 100vh;
+    color: #333;
+    overflow: hidden;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 10px;
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 20px;
+    height: 100vh;
+    box-sizing: border-box;
+}
+
+/* 头部样式 */
+header {
+    grid-column: 1 / -1;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+header h1 {
+    font-size: 2rem;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    margin-bottom: 5px;
+}
+
+.last-result {
+    color: #ffd700;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+/* 主内容区域 */
+main {
+    background: white;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-y: auto;
+    height: calc(100vh - 120px);
+}
+
+/* 控制面板 */
+.controls {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.meal-type-selector,
+.cuisine-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.controls label {
+    font-weight: 600;
+    color: #555;
+}
+
+.controls select {
+    padding: 8px 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    background: white;
+    cursor: pointer;
+    transition: border-color 0.3s;
+}
+
+.controls select:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+/* 转盘容器 */
+.wheel-container {
+    position: relative;
+    margin: 20px 0;
+}
+
+#wheelCanvas {
+    border-radius: 50%;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.wheel-pointer {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 15px solid transparent;
+    border-right: 15px solid transparent;
+    border-top: 25px solid #ff4757;
+    z-index: 10;
+}
+
+/* 操作按钮 */
+.action-buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+
+.action-buttons button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    min-width: 120px;
+}
+
+.spin-btn {
+    background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+    color: white;
+}
+
+.spin-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(238, 90, 82, 0.4);
+}
+
+.spin-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.reset-btn {
+    background: linear-gradient(45deg, #74b9ff, #0984e3);
+    color: white;
+}
+
+.reset-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(116, 185, 255, 0.4);
+}
+
+.custom-btn {
+    background: linear-gradient(45deg, #55a3ff, #003d82);
+    color: white;
+}
+
+.custom-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(85, 163, 255, 0.4);
+}
+
+/* 结果显示 */
+.result-display {
+    text-align: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #ffecd2, #fcb69f);
+    border-radius: 15px;
+    margin-top: 20px;
+    width: 100%;
+    max-width: 400px;
+}
+
+.result-display h2 {
+    font-size: 1.8rem;
+    color: #d63031;
+    margin-bottom: 15px;
+}
+
+.result-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.result-actions button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 20px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.favorite-btn {
+    background: #fd79a8;
+    color: white;
+}
+
+.share-btn {
+    background: #00b894;
+    color: white;
+}
+
+.again-btn {
+    background: #6c5ce7;
+    color: white;
+}
+
+.result-actions button:hover {
+    transform: translateY(-1px);
+    opacity: 0.9;
+}
+
+/* 侧边栏 */
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    height: calc(100vh - 120px);
+    overflow-y: auto;
+}
+
+.favorites-section,
+.history-section {
+    background: white;
+    border-radius: 15px;
+    padding: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    flex: 1;
+    min-height: 0;
+}
+
+.favorites-section h3,
+.history-section h3 {
+    color: #2d3436;
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 8px;
+}
+
+.favorites-list,
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.favorite-item,
+.history-item {
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.3s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.favorite-item:hover,
+.history-item:hover {
+    background: #e9ecef;
+}
+
+.remove-btn {
+    background: #ff7675;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+/* 弹窗样式 */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80%;
+    overflow-y: auto;
+    position: relative;
+}
+
+.close {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 28px;
+    cursor: pointer;
+    color: #999;
+}
+
+.close:hover {
+    color: #333;
+}
+
+.custom-input textarea {
+    width: 100%;
+    height: 120px;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    resize: vertical;
+    margin-bottom: 15px;
+}
+
+.save-btn,
+.copy-btn {
+    background: linear-gradient(45deg, #00b894, #00a085);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.save-btn:hover,
+.copy-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(0, 184, 148, 0.3);
+}
+
+.custom-list {
+    margin-top: 20px;
+}
+
+.custom-list h3 {
+    margin-bottom: 15px;
+    color: #2d3436;
+}
+
+.custom-dish-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.delete-dish {
+    background: #ff7675;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+/* 分享弹窗 */
+.share-content {
+    text-align: center;
+}
+
+#shareUrl {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+.qr-code {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    body {
+        overflow: auto;
+    }
+
+    .container {
+        grid-template-columns: 1fr;
+        gap: 15px;
+        padding: 10px;
+        height: auto;
+        min-height: 100vh;
+    }
+
+    header h1 {
+        font-size: 1.8rem;
+    }
+
+    main {
+        padding: 15px;
+        height: auto;
+        margin-bottom: 15px;
+    }
+
+    .controls {
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .meal-type-selector,
+    .cuisine-selector {
+        flex-direction: column;
+        text-align: center;
+        gap: 5px;
+    }
+
+    #wheelCanvas {
+        width: 280px !important;
+        height: 280px !important;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+        width: 100%;
+        max-width: 280px;
+    }
+
+    .action-buttons button {
+        width: 100%;
+    }
+
+    .result-actions {
+        flex-direction: column;
+    }
+
+    .result-actions button {
+        width: 100%;
+    }
+
+    .sidebar {
+        order: -1;
+        height: auto;
+        flex-direction: row;
+        gap: 10px;
+    }
+
+    .favorites-section,
+    .history-section {
+        flex: 1;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .modal-content {
+        padding: 20px;
+        width: 95%;
+    }
+}
+
+@media (max-width: 480px) {
+    header h1 {
+        font-size: 1.5rem;
+    }
+
+    main {
+        padding: 12px;
+    }
+
+    #wheelCanvas {
+        width: 240px !important;
+        height: 240px !important;
+    }
+
+    .result-display h2 {
+        font-size: 1.3rem;
+    }
+
+    .sidebar {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .favorites-section,
+    .history-section {
+        max-height: 200px;
+    }
+}
+
+/* 转盘旋转动画 */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(var(--rotation-angle));
+    }
+}
+
+.spinning {
+    animation: spin var(--spin-duration) cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
