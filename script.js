@@ -59,6 +59,9 @@ class FoodWheelApp {
     init() {
         this.loadLocalData();
         this.setupEventListeners();
+        // 确保canvas初始状态正确
+        this.canvas.style.transform = 'none';
+        this.canvas.classList.remove('spinning');
         this.updateWheel();
         this.loadLastResult();
         this.parseURLParams();
@@ -153,8 +156,9 @@ class FoodWheelApp {
         const anglePerSlice = (2 * Math.PI) / dishes.length;
 
         dishes.forEach((dish, index) => {
-            const startAngle = index * anglePerSlice + this.currentRotation;
-            const endAngle = (index + 1) * anglePerSlice + this.currentRotation;
+            // 从正上方开始绘制（-π/2），让第0个扇形对准箭头
+            const startAngle = index * anglePerSlice - Math.PI / 2 + this.currentRotation;
+            const endAngle = (index + 1) * anglePerSlice - Math.PI / 2 + this.currentRotation;
 
             // 绘制扇形
             this.ctx.beginPath();
@@ -205,12 +209,18 @@ class FoodWheelApp {
         const finalAngle = Math.random() * 2 * Math.PI;
         const totalRotation = spins * 2 * Math.PI + finalAngle;
 
-        // 计算最终选中的菜品 - 修复箭头指向问题
+        // 计算最终选中的菜品
         const anglePerSlice = (2 * Math.PI) / dishes.length;
-        // 箭头指向正上方(0度)，所以我们需要计算从正上方开始的角度
         const finalRotation = totalRotation % (2 * Math.PI);
-        // 将角度转换为从正上方开始的索引
-        const selectedIndex = Math.floor(((2 * Math.PI - finalRotation) % (2 * Math.PI)) / anglePerSlice) % dishes.length;
+
+        // 箭头在正上方(-π/2)，转盘从-π/2开始绘制
+        // 当转盘旋转finalRotation后，箭头相对于转盘的角度是-finalRotation
+        // 需要将这个角度转换为正值并计算对应的扇形索引
+        let arrowRelativeAngle = -finalRotation;
+        if (arrowRelativeAngle < 0) {
+            arrowRelativeAngle += 2 * Math.PI;
+        }
+        const selectedIndex = Math.floor(arrowRelativeAngle / anglePerSlice) % dishes.length;
         this.selectedDish = dishes[selectedIndex];
 
         // 设置CSS变量并开始动画
@@ -220,8 +230,14 @@ class FoodWheelApp {
 
         // 动画结束后的处理
         setTimeout(() => {
-            this.currentRotation = totalRotation % (2 * Math.PI);
+            // 移除CSS动画类，但保持最终的transform状态
             this.canvas.classList.remove('spinning');
+            // 设置最终的transform状态，确保动画结束后的显示保持一致
+            this.canvas.style.transform = `rotate(${totalRotation}rad)`;
+
+            // 更新当前旋转角度（用于后续的canvas绘制）
+            this.currentRotation = finalRotation;
+
             this.isSpinning = false;
             document.getElementById('spinBtn').disabled = false;
             this.showResult();
@@ -240,7 +256,8 @@ class FoodWheelApp {
         if (this.isSpinning) return;
 
         this.currentRotation = 0;
-        this.canvas.style.transform = 'rotate(0deg)';
+        this.canvas.style.transform = 'none';
+        this.canvas.classList.remove('spinning');
         document.getElementById('resultDisplay').style.display = 'none';
         this.updateWheel();
     }
@@ -365,8 +382,10 @@ class FoodWheelApp {
 
         container.innerHTML = history.map((entry, index) => `
             <div class="history-item">
-                <span onclick="app.selectFavoriteDish('${entry.dish}')">${entry.dish}</span>
-                <small>${entry.timestamp}</small>
+                <div>
+                    <span onclick="app.selectFavoriteDish('${entry.dish}')" style="cursor: pointer;">${entry.dish}</span>
+                    <small style="display: block; color: #666; font-size: 11px; margin-top: 2px;">${entry.timestamp}</small>
+                </div>
             </div>
         `).join('');
     }

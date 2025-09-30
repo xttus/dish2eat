@@ -259,6 +259,32 @@ main {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+/* 自定义滚动条样式 */
+.favorites-list::-webkit-scrollbar,
+.history-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.favorites-list::-webkit-scrollbar-track,
+.history-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.favorites-list::-webkit-scrollbar-thumb,
+.history-list::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.favorites-list::-webkit-scrollbar-thumb:hover,
+.history-list::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
 }
 
 .favorite-item,
@@ -476,8 +502,13 @@ main {
     .favorites-section,
     .history-section {
         flex: 1;
-        max-height: 300px;
+        max-height: 250px;
         overflow-y: auto;
+    }
+
+    .favorites-list,
+    .history-list {
+        max-height: 200px;
     }
 
     .modal-content {
@@ -511,7 +542,12 @@ main {
 
     .favorites-section,
     .history-section {
-        max-height: 200px;
+        max-height: 180px;
+    }
+
+    .favorites-list,
+    .history-list {
+        max-height: 140px;
     }
 }
 
