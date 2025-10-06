@@ -179,12 +179,20 @@ class FoodWheelApp {
             this.ctx.save();
             this.ctx.translate(centerX, centerY);
             this.ctx.rotate(startAngle + anglePerSlice / 2);
-            this.ctx.fillStyle = '#333';
-            this.ctx.font = this.canvas.width > 300 ? '14px Arial' : '12px Arial';
+
+            // 优化字体样式和可读性
+            const fontSize = this.canvas.width > 300 ? 16 : 14;
+            this.ctx.font = `bold ${fontSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
+            this.ctx.fillStyle = '#fff';
+            this.ctx.strokeStyle = '#333';
+            this.ctx.lineWidth = 3;
             this.ctx.textAlign = 'left';
             this.ctx.textBaseline = 'middle';
 
-            const textRadius = radius * 0.7;
+            const textRadius = radius * 0.65;
+
+            // 添加文字描边效果增强可读性
+            this.ctx.strokeText(dish, textRadius, 0);
             this.ctx.fillText(dish, textRadius, 0);
             this.ctx.restore();
         });
