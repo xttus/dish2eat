@@ -142,6 +142,12 @@ class FoodWheelApp {
     }
 
     updateWheel() {
+        // 切换菜系时重置转盘状态
+        this.currentRotation = 0;
+        this.canvas.style.transform = 'none';
+        this.canvas.classList.remove('spinning');
+        document.getElementById('resultDisplay').style.display = 'none';
+
         const dishes = this.getCurrentDishes();
         this.drawWheel(dishes);
     }
@@ -204,6 +210,11 @@ class FoodWheelApp {
         document.getElementById('spinBtn').disabled = true;
         document.getElementById('resultDisplay').style.display = 'none';
 
+        // 先重置转盘到初始位置
+        this.currentRotation = 0;
+        this.canvas.style.transform = 'none';
+        this.canvas.classList.remove('spinning');
+
         // 随机旋转角度
         const spins = 3 + Math.random() * 3; // 3-6圈
         const finalAngle = Math.random() * 2 * Math.PI;
@@ -213,13 +224,10 @@ class FoodWheelApp {
         const anglePerSlice = (2 * Math.PI) / dishes.length;
         const finalRotation = totalRotation % (2 * Math.PI);
 
-        // 箭头在正上方(-π/2)，转盘从-π/2开始绘制
-        // 当转盘旋转finalRotation后，箭头相对于转盘的角度是-finalRotation
-        // 需要将这个角度转换为正值并计算对应的扇形索引
-        let arrowRelativeAngle = -finalRotation;
-        if (arrowRelativeAngle < 0) {
-            arrowRelativeAngle += 2 * Math.PI;
-        }
+        // 箭头固定在正上方，扇形从正上方开始按顺时针绘制
+        // 转盘旋转finalRotation后，计算箭头指向哪个扇形
+        // 由于转盘顺时针旋转，箭头相对于转盘是逆时针移动
+        let arrowRelativeAngle = (2 * Math.PI - finalRotation) % (2 * Math.PI);
         const selectedIndex = Math.floor(arrowRelativeAngle / anglePerSlice) % dishes.length;
         this.selectedDish = dishes[selectedIndex];
 
