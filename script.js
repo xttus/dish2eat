@@ -6,6 +6,17 @@ class FoodWheelApp {
         this.currentRotation = 0;
         this.selectedDish = null;
 
+        // 当前选中的自定义列表
+        this.currentCustomList = 'default';
+
+        // 自定义列表数据结构
+        this.customLists = {
+            'default': {
+                name: '默认',
+                dishes: []
+            }
+        };
+
         // 菜品数据
         this.dishData = {
             breakfast: {
@@ -58,6 +69,7 @@ class FoodWheelApp {
 
     init() {
         this.loadLocalData();
+        this.loadImportedData();
         this.setupEventListeners();
         // 确保canvas初始状态正确
         this.canvas.style.transform = 'none';
@@ -87,6 +99,22 @@ class FoodWheelApp {
         document.getElementById('closeShareModal').addEventListener('click', () => this.hideShareModal());
         document.getElementById('saveDishes').addEventListener('click', () => this.saveCustomDishes());
         document.getElementById('copyUrl').addEventListener('click', () => this.copyShareUrl());
+
+        // Excel导入事件
+        document.getElementById('selectExcelBtn').addEventListener('click', () => this.selectExcelFile());
+        document.getElementById('downloadTemplateBtn').addEventListener('click', () => this.downloadTemplate());
+        document.getElementById('excelFile').addEventListener('change', (e) => this.handleExcelFile(e));
+
+        // 自定义列表管理事件
+        document.getElementById('customListSelector').addEventListener('change', (e) => this.switchCustomList(e.target.value));
+        document.getElementById('addListBtn').addEventListener('click', () => this.addNewList());
+        document.getElementById('renameListBtn').addEventListener('click', () => this.renameCurrentList());
+        document.getElementById('deleteListBtn').addEventListener('click', () => this.deleteCurrentList());
+
+        // 导入模式切换事件
+        document.querySelectorAll('input[name="importMode"]').forEach(radio => {
+            radio.addEventListener('change', (e) => this.toggleNewListInput(e.target.value));
+        });
 
         // 点击弹窗外部关闭
         document.addEventListener('click', (e) => {
@@ -129,8 +157,10 @@ class FoodWheelApp {
         const mealType = document.getElementById('mealType').value;
         const cuisine = document.getElementById('cuisine').value;
 
-        if (cuisine === 'custom') {
-            return this.getCustomDishes();
+        // 检查是否是自定义列表
+        if (cuisine.startsWith('custom:')) {
+            const listId = cuisine.replace('custom:', '');
+            return this.customLists[listId]?.dishes || [];
         }
 
         if (this.dishData[mealType] && this.dishData[mealType][cuisine]) {
@@ -281,6 +311,7 @@ class FoodWheelApp {
     // 自定义菜品功能
     showCustomModal() {
         document.getElementById('customModal').style.display = 'flex';
+        this.updateCustomListSelector();
         this.updateCustomDishesList();
     }
 
@@ -296,7 +327,8 @@ class FoodWheelApp {
         const existing = this.getCustomDishes();
         const combined = [...new Set([...existing, ...dishes])];
 
-        localStorage.setItem('customDishes', JSON.stringify(combined));
+        this.customLists[this.currentCustomList].dishes = combined;
+        this.saveCustomListsToStorage();
         document.getElementById('customDishes').value = '';
         this.updateCustomDishesList();
 
@@ -306,8 +338,7 @@ class FoodWheelApp {
     }
 
     getCustomDishes() {
-        const stored = localStorage.getItem('customDishes');
-        return stored ? JSON.parse(stored) : [];
+        return this.customLists[this.currentCustomList]?.dishes || [];
     }
 
     updateCustomDishesList() {
@@ -324,7 +355,8 @@ class FoodWheelApp {
 
     deleteCustomDish(dish) {
         const dishes = this.getCustomDishes().filter(d => d !== dish);
-        localStorage.setItem('customDishes', JSON.stringify(dishes));
+        this.customLists[this.currentCustomList].dishes = dishes;
+        this.saveCustomListsToStorage();
         this.updateCustomDishesList();
 
         if (document.getElementById('cuisine').value === 'custom') {
@@ -490,8 +522,399 @@ class FoodWheelApp {
         if (!localStorage.getItem('history')) {
             localStorage.setItem('history', JSON.stringify([]));
         }
-        if (!localStorage.getItem('customDishes')) {
-            localStorage.setItem('customDishes', JSON.stringify([]));
+
+        // 加载自定义列表数据
+        this.loadCustomListsFromStorage();
+    }
+
+    // 自定义列表管理功能
+    loadCustomListsFromStorage() {
+        const stored = localStorage.getItem('customLists');
+        if (stored) {
+            try {
+                this.customLists = JSON.parse(stored);
+            } catch (error) {
+                console.error('加载自定义列表失败:', error);
+                this.customLists = {
+                    'default': {
+                        name: '默认',
+                        dishes: []
+                    }
+                };
+            }
+        }
+
+        // 兼容旧版本数据
+        const oldCustomDishes = localStorage.getItem('customDishes');
+        if (oldCustomDishes && !this.customLists.default.dishes.length) {
+            try {
+                this.customLists.default.dishes = JSON.parse(oldCustomDishes);
+                this.saveCustomListsToStorage();
+                localStorage.removeItem('customDishes');
+            } catch (error) {
+                console.error('迁移旧数据失败:', error);
+            }
+        }
+
+        this.updateCustomListSelector();
+    }
+
+    saveCustomListsToStorage() {
+        localStorage.setItem('customLists', JSON.stringify(this.customLists));
+    }
+
+    updateCustomListSelector() {
+        const selector = document.getElementById('customListSelector');
+        selector.innerHTML = '';
+
+        Object.keys(this.customLists).forEach(listId => {
+            const option = document.createElement('option');
+            option.value = listId;
+            option.textContent = this.customLists[listId].name;
+            if (listId === this.currentCustomList) {
+                option.selected = true;
+            }
+            selector.appendChild(option);
+        });
+
+        // 同时更新主菜系选择器中的自定义列表
+        this.updateCuisineSelector();
+    }
+
+    updateCuisineSelector() {
+        const cuisineSelector = document.getElementById('cuisine');
+        const customListsGroup = document.getElementById('customListsGroup');
+
+        // 清空自定义列表组
+        customListsGroup.innerHTML = '';
+
+        // 添加所有自定义列表到菜系选择器
+        Object.keys(this.customLists).forEach(listId => {
+            const option = document.createElement('option');
+            option.value = `custom:${listId}`;
+            option.textContent = this.customLists[listId].name;
+            customListsGroup.appendChild(option);
+        });
+    }
+
+    switchCustomList(listId) {
+        if (this.customLists[listId]) {
+            this.currentCustomList = listId;
+            this.updateCustomDishesList();
+
+            if (document.getElementById('cuisine').value === 'custom') {
+                this.updateWheel();
+            }
+        }
+    }
+
+    addNewList() {
+        const name = prompt('请输入新列表名称:');
+        if (!name || !name.trim()) return;
+
+        const listId = 'list_' + Date.now();
+        this.customLists[listId] = {
+            name: name.trim(),
+            dishes: []
+        };
+
+        this.saveCustomListsToStorage();
+        this.updateCustomListSelector();
+        this.switchCustomList(listId);
+        this.showSuccessNotification(`成功创建列表"${name.trim()}"！`);
+    }
+
+    renameCurrentList() {
+        if (this.currentCustomList === 'default') {
+            alert('默认列表不能重命名！');
+            return;
+        }
+
+        const currentName = this.customLists[this.currentCustomList].name;
+        const newName = prompt('请输入新的列表名称:', currentName);
+        if (!newName || !newName.trim() || newName.trim() === currentName) return;
+
+        this.customLists[this.currentCustomList].name = newName.trim();
+        this.saveCustomListsToStorage();
+        this.updateCustomListSelector();
+        this.showSuccessNotification(`列表已重命名为"${newName.trim()}"！`);
+    }
+
+    deleteCurrentList() {
+        if (this.currentCustomList === 'default') {
+            alert('默认列表不能删除！');
+            return;
+        }
+
+        const listName = this.customLists[this.currentCustomList].name;
+        if (!confirm(`确定要删除列表"${listName}"吗？此操作不可恢复！`)) return;
+
+        delete this.customLists[this.currentCustomList];
+        this.saveCustomListsToStorage();
+
+        // 切换到默认列表
+        this.currentCustomList = 'default';
+        this.updateCustomListSelector();
+        this.updateCustomDishesList();
+
+        if (document.getElementById('cuisine').value === 'custom') {
+            this.updateWheel();
+        }
+
+        this.showSuccessNotification(`列表"${listName}"已删除！`);
+    }
+
+    toggleNewListInput(mode) {
+        const newListInput = document.getElementById('newListNameInput');
+        if (mode === 'newlist') {
+            newListInput.style.display = 'block';
+        } else {
+            newListInput.style.display = 'none';
+        }
+    }
+
+    // Excel导入功能
+    selectExcelFile() {
+        document.getElementById('excelFile').click();
+    }
+
+    downloadTemplate() {
+        // 创建Excel模板数据
+        const templateData = [
+            ['餐饮类型', '菜系', '菜品名称'],
+            ['lunch', 'sichuan', '麻婆豆腐'],
+            ['lunch', 'sichuan', '水煮鱼'],
+            ['lunch', 'cantonese', '白切鸡'],
+            ['dinner', 'western', '牛排'],
+            ['breakfast', 'mixed', '豆浆油条'],
+            ['snack', 'mixed', '奶茶'],
+            ['drink', 'mixed', '咖啡']
+        ];
+
+        // 创建工作簿
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet(templateData);
+
+        // 设置列宽
+        ws['!cols'] = [
+            { width: 15 },
+            { width: 15 },
+            { width: 20 }
+        ];
+
+        XLSX.utils.book_append_sheet(wb, ws, '菜品模板');
+
+        // 下载文件
+        XLSX.writeFile(wb, '菜品导入模板.xlsx');
+
+        this.showImportStatus('模板下载成功！', 'success');
+    }
+
+    handleExcelFile(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+
+                // 读取第一个工作表
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+
+                // 转换为JSON数组
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                this.processExcelData(jsonData);
+            } catch (error) {
+                console.error('Excel文件解析错误:', error);
+                this.showImportStatus('Excel文件格式错误，请检查文件格式！', 'error');
+            }
+        };
+
+        reader.readAsArrayBuffer(file);
+
+        // 清空文件输入
+        event.target.value = '';
+    }
+
+    processExcelData(data) {
+        if (!data || data.length < 2) {
+            this.showImportStatus('Excel文件内容为空或格式不正确！', 'error');
+            return;
+        }
+
+        // 跳过标题行，从第二行开始处理
+        const dishRows = data.slice(1);
+        const validDishes = [];
+        const errors = [];
+
+        // 验证数据格式
+        dishRows.forEach((row, index) => {
+            const rowNum = index + 2; // 实际行号（从2开始）
+
+            if (!row || row.length < 3) {
+                errors.push(`第${rowNum}行：数据不完整`);
+                return;
+            }
+
+            const [mealType, cuisine, dishName] = row;
+
+            // 验证餐饮类型
+            const validMealTypes = ['breakfast', 'lunch', 'dinner', 'snack', 'drink', 'nightFood'];
+            if (!validMealTypes.includes(mealType)) {
+                errors.push(`第${rowNum}行：餐饮类型"${mealType}"无效`);
+                return;
+            }
+
+            // 验证菜系
+            const validCuisines = ['mixed', 'sichuan', 'cantonese', 'hunan', 'western', 'japanese', 'korean'];
+            if (!validCuisines.includes(cuisine)) {
+                errors.push(`第${rowNum}行：菜系"${cuisine}"无效`);
+                return;
+            }
+
+            // 验证菜品名称
+            if (!dishName || dishName.toString().trim() === '') {
+                errors.push(`第${rowNum}行：菜品名称不能为空`);
+                return;
+            }
+
+            validDishes.push({
+                mealType: mealType.toString().trim(),
+                cuisine: cuisine.toString().trim(),
+                dishName: dishName.toString().trim()
+            });
+        });
+
+        if (errors.length > 0) {
+            this.showImportStatus(`导入失败：\n${errors.slice(0, 5).join('\n')}${errors.length > 5 ? '\n...' : ''}`, 'error');
+            return;
+        }
+
+        if (validDishes.length === 0) {
+            this.showImportStatus('没有找到有效的菜品数据！', 'error');
+            return;
+        }
+
+        // 获取导入模式
+        const importMode = document.querySelector('input[name="importMode"]:checked').value;
+
+        this.importDishesToData(validDishes, importMode);
+    }
+
+    importDishesToData(dishes, mode) {
+        try {
+            let targetListId = this.currentCustomList;
+            let modeText = '';
+
+            if (mode === 'newlist') {
+                // 创建新列表模式
+                const newListName = document.getElementById('newListName').value.trim();
+                if (!newListName) {
+                    this.showImportStatus('请输入新列表名称！', 'error');
+                    return;
+                }
+
+                targetListId = 'list_' + Date.now();
+                this.customLists[targetListId] = {
+                    name: newListName,
+                    dishes: []
+                };
+                modeText = `创建新列表"${newListName}"并导入`;
+            } else if (mode === 'replace') {
+                // 替换当前列表
+                this.customLists[targetListId].dishes = [];
+                modeText = '替换当前列表并导入';
+            } else {
+                // 追加到当前列表
+                modeText = '追加到当前列表';
+            }
+
+            // 提取菜品名称并添加到目标列表
+            const dishNames = dishes.map(dish => dish.dishName);
+            const existing = this.customLists[targetListId].dishes;
+            const combined = [...new Set([...existing, ...dishNames])];
+
+            this.customLists[targetListId].dishes = combined;
+            this.saveCustomListsToStorage();
+
+            // 如果创建了新列表，切换到新列表
+            if (mode === 'newlist') {
+                this.updateCustomListSelector();
+                this.switchCustomList(targetListId);
+                document.getElementById('newListName').value = '';
+                document.getElementById('newListNameInput').style.display = 'none';
+                document.querySelector('input[name="importMode"][value="append"]').checked = true;
+            } else {
+                this.updateCustomDishesList();
+            }
+
+            // 如果当前选择的是自定义菜系，更新转盘
+            if (document.getElementById('cuisine').value === 'custom') {
+                this.updateWheel();
+            }
+
+            this.showImportStatus(`成功${modeText} ${dishNames.length} 个菜品！`, 'success');
+
+        } catch (error) {
+            console.error('导入数据时出错:', error);
+            this.showImportStatus('导入数据时发生错误，请重试！', 'error');
+        }
+    }
+
+    showImportStatus(message, type) {
+        const statusDiv = document.getElementById('importStatus');
+        statusDiv.textContent = message;
+        statusDiv.className = `import-status ${type}`;
+
+        if (type === 'success') {
+            // 显示成功提示
+            this.showSuccessNotification(message);
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 3000);
+        }
+    }
+
+    showSuccessNotification(message) {
+        // 创建成功提示元素
+        const notification = document.createElement('div');
+        notification.className = 'success-notification';
+        notification.innerHTML = `
+            <div class="notification-content">
+                <span class="notification-icon">✅</span>
+                <span class="notification-text">${message}</span>
+            </div>
+        `;
+
+        document.body.appendChild(notification);
+
+        // 显示动画
+        setTimeout(() => {
+            notification.classList.add('show');
+        }, 100);
+
+        // 自动隐藏
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 300);
+        }, 3000);
+    }
+
+    // 在应用初始化时加载导入的数据
+    loadImportedData() {
+        const importedData = localStorage.getItem('importedDishes');
+        if (importedData) {
+            try {
+                this.dishData = JSON.parse(importedData);
+            } catch (error) {
+                console.error('加载导入数据失败:', error);
+            }
         }
     }
 }
