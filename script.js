@@ -86,7 +86,7 @@ class FoodWheelApp {
         document.getElementById('spinBtn').addEventListener('click', () => this.spin());
         document.getElementById('resetBtn').addEventListener('click', () => this.reset());
         document.getElementById('customBtn').addEventListener('click', () => this.showCustomModal());
-        document.getElementById('againBtn').addEventListener('click', () => this.spin());
+        document.getElementById('againBtn').addEventListener('click', () => this.againSpin());
         document.getElementById('favoriteBtn').addEventListener('click', () => this.addToFavorites());
         document.getElementById('shareBtn').addEventListener('click', () => this.showShareModal());
 
@@ -301,11 +301,48 @@ class FoodWheelApp {
     reset() {
         if (this.isSpinning) return;
 
+        // 重置转盘状态
         this.currentRotation = 0;
         this.canvas.style.transform = 'none';
         this.canvas.classList.remove('spinning');
         document.getElementById('resultDisplay').style.display = 'none';
+        this.selectedDish = null;
+
+        // 清空历史记录
+        localStorage.setItem('history', JSON.stringify([]));
+        this.updateHistoryList();
+
+        // 清空上次结果
+        localStorage.removeItem('lastResult');
+        document.getElementById('lastResult').textContent = '';
+
+        // 重新绘制转盘
         this.updateWheel();
+
+        // 显示重置成功提示
+        this.showSuccessNotification('历史记录已清空！');
+    }
+
+    againSpin() {
+        if (this.isSpinning) return;
+
+        // 只清空本次抽取结果，不删除历史记录
+        this.currentRotation = 0;
+        this.canvas.style.transform = 'none';
+        this.canvas.classList.remove('spinning');
+        document.getElementById('resultDisplay').style.display = 'none';
+        this.selectedDish = null;
+
+        // 重新绘制转盘
+        this.updateWheel();
+
+        // 显示提示
+        this.showSuccessNotification('重新开始抽选！');
+
+        // 延迟一秒后自动开始转盘
+        setTimeout(() => {
+            this.spin();
+        }, 1000);
     }
 
     // 自定义菜品功能
